@@ -164,16 +164,16 @@ fun onGoogleSignInClicked(
             } else {
                 onAuthError("Unexpected credential type received.")
             }
-        } catch (e: GetCredentialCancellationException) {
-            Log.w("Auth", "Google Sign-In flow cancelled or dismissed: ${e.message}")
-            onAuthCancelled()
-        } catch (e: NoCredentialException) {
-            Log.w("Auth", "No Google credentials available: ${e.message}")
-            onAuthError("No Google account found on this device. Please sign into a Google account in device Settings.")
-        } catch (e: Exception) {
-            Log.e("Auth", "Google Sign-In failed", e)
-            onAuthError(e.localizedMessage ?: "Sign in failed. Please check your network connection and try again.")
-        }
+       } catch (e: GetCredentialCancellationException) {
+    Log.e("Auth", "CredentialManager cancellation details", e)
+    onAuthError("Sign-In was cancelled: ${e.message}")
+} catch (e: NoCredentialException) {
+    Log.w("Auth", "No Google credentials available: ${e.message}")
+    onAuthError("No Google account found on this device. Please sign into a Google account in device Settings.")
+} catch (e: Exception) {
+    Log.e("Auth", "Google Sign-In failed", e)
+    onAuthError(e.localizedMessage ?: "Sign in failed. Please check your network connection and try again.")
+}
     }
 }
 
