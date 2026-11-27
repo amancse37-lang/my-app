@@ -1,0 +1,6 @@
+{
+  "name": "MotionStory Studio",
+  "description": "AI-powered 2D documentary animation and multitrack video editing studio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

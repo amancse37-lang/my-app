@@ -1,0 +1,384 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HARDENED PRIMITIVES ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isOptionalBoundedString(data, field, maxLen) {
+      return !(field in data) || (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    // --- ENTITY VALIDATION BLUEPRINTS ---
+
+    function isValidStudioProject(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'name', 'scriptText', 'scriptLanguage',
+               'aspectRatio', 'fps', 'resolution', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'name', 'scriptText', 'scriptLanguage',
+               'aspectRatio', 'fps', 'resolution', 'storyAnalysis',
+               'projectAudioClips', 'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+             data.scriptText is string && data.scriptText.size() <= 25000 &&
+             data.scriptLanguage in ['English', 'Hindi', 'Bilingual'] &&
+             data.aspectRatio in ['16:9', '21:9', '9:16'] &&
+             data.fps is int && data.fps in [24, 30, 60] &&
+             data.resolution in ['720p', '1080p', '4K'] &&
+             (!('storyAnalysis' in data) || (
+               data.storyAnalysis is map &&
+               data.storyAnalysis.keys().size() <= 16
+             )) &&
+             (!('projectAudioClips' in data) || (
+               data.projectAudioClips is list &&
+               data.projectAudioClips.size() <= 20 &&
+               (data.projectAudioClips.size() == 0 || data.projectAudioClips[0] is map)
+             )) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isOptList(data, key, maxSize) {
+      return !(key in data) || (data[key] is list && data[key].size() <= maxSize);
+    }
+
+    function isOptMap(data, key, maxKeys) {
+      return !(key in data) || (data[key] is map && data[key].keys().size() <= maxKeys);
+    }
+
+    function isValidStudioScene(data, userId) {
+      return data.keys().hasOnly([
+               'userId', 'orderIndex', 'title', 'description', 'visualSummary',
+               'narrationText', 'subtitleText', 'durationSec', 'backgroundPreset',
+               'backgroundTintHex', 'characterId', 'characterCast', 'sceneElements',
+               'layerStates', 'animationKeyframes', 'characterActingCues', 'cinematics',
+               'scenePlan', 'dialogueLines', 'audioClips', 'lipSyncCues', 'soundSuggestions',
+               'motionGraphics', 'subtitleCues', 'subtitleStyle', 'outgoingTransition',
+               'graphicSuggestions',
+               'posX', 'posY', 'scale', 'rotationDeg', 'animationStyle',
+               'cameraMovement', 'cameraZoom', 'effectPreset', 'effectIntensity',
+               'motionGraphicTitle', 'motionGraphicStyle', 'musicCue', 'sfxCue',
+               'objectProp', 'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.orderIndex is int && data.orderIndex >= 0 && data.orderIndex <= 500 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.visualSummary is string && data.visualSummary.size() <= 1000 &&
+             data.narrationText is string && data.narrationText.size() <= 3000 &&
+             data.subtitleText is string && data.subtitleText.size() <= 1000 &&
+             data.durationSec is number && data.durationSec >= 1.0 && data.durationSec <= 300.0 &&
+             data.backgroundPreset is string && data.backgroundPreset.size() <= 128 &&
+             data.backgroundTintHex is string && data.backgroundTintHex.size() <= 16 &&
+             data.characterId is string && data.characterId.size() <= 128 &&
+             isOptList(data, 'characterCast', 12) &&
+             isOptList(data, 'sceneElements', 24) &&
+             isOptList(data, 'layerStates', 6) &&
+             isOptList(data, 'animationKeyframes', 200) &&
+             isOptList(data, 'characterActingCues', 60) &&
+             isOptMap(data, 'cinematics', 32) &&
+             isOptMap(data, 'scenePlan', 20) &&
+             isOptList(data, 'dialogueLines', 40) &&
+             isOptList(data, 'audioClips', 40) &&
+             isOptList(data, 'lipSyncCues', 240) &&
+             isOptList(data, 'soundSuggestions', 20) &&
+             isOptList(data, 'motionGraphics', 30) &&
+             isOptList(data, 'subtitleCues', 80) &&
+             isOptMap(data, 'subtitleStyle', 16) &&
+             isOptMap(data, 'outgoingTransition', 10) &&
+             isOptList(data, 'graphicSuggestions', 20) &&
+             data.posX is number && data.posX >= -1000.0 && data.posX <= 1000.0 &&
+             data.posY is number && data.posY >= -1000.0 && data.posY <= 1000.0 &&
+             data.scale is number && data.scale >= 0.2 && data.scale <= 3.0 &&
+             data.rotationDeg is number && data.rotationDeg >= -360.0 && data.rotationDeg <= 360.0 &&
+             data.animationStyle is string && data.animationStyle.size() <= 64 &&
+             data.cameraMovement is string && data.cameraMovement.size() <= 64 &&
+             data.cameraZoom is number && data.cameraZoom >= 0.5 && data.cameraZoom <= 3.0 &&
+             data.effectPreset is string && data.effectPreset.size() <= 64 &&
+             data.effectIntensity is number && data.effectIntensity >= 0.0 && data.effectIntensity <= 1.0 &&
+             data.motionGraphicTitle is string && data.motionGraphicTitle.size() <= 120 &&
+             data.motionGraphicStyle is string && data.motionGraphicStyle.size() <= 64 &&
+             data.musicCue is string && data.musicCue.size() <= 120 &&
+             data.sfxCue is string && data.sfxCue.size() <= 120 &&
+             data.objectProp is string && data.objectProp.size() <= 120 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidStudioCharacter(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'charCode', 'name', 'role', 'appearanceNotes',
+               'wardrobePalette', 'expressionDefault', 'avatarPreset',
+               'accentColorHex', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'charCode', 'name', 'role', 'visualAge',
+               'faceDescription', 'hairStyle', 'hairColor', 'clothing',
+               'clothingColors', 'bodyProportions', 'accessories', 'personality',
+               'appearanceNotes', 'wardrobePalette', 'expressionDefault',
+               'visualStyle', 'referenceImageBase64', 'avatarPreset',
+               'accentColorHex', 'voiceLanguage', 'voiceId', 'voicePitch',
+               'voiceRate', 'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.charCode is string && data.charCode.size() >= 1 && data.charCode.size() <= 32 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.role is string && data.role.size() <= 120 &&
+             isOptionalBoundedString(data, 'visualAge', 64) &&
+             isOptionalBoundedString(data, 'faceDescription', 600) &&
+             isOptionalBoundedString(data, 'hairStyle', 160) &&
+             isOptionalBoundedString(data, 'hairColor', 80) &&
+             isOptionalBoundedString(data, 'clothing', 400) &&
+             isOptionalBoundedString(data, 'clothingColors', 160) &&
+             isOptionalBoundedString(data, 'bodyProportions', 240) &&
+             isOptionalBoundedString(data, 'accessories', 300) &&
+             isOptionalBoundedString(data, 'personality', 400) &&
+             data.appearanceNotes is string && data.appearanceNotes.size() <= 1500 &&
+             data.wardrobePalette is string && data.wardrobePalette.size() <= 160 &&
+             data.expressionDefault is string && data.expressionDefault.size() <= 64 &&
+             isOptionalBoundedString(data, 'visualStyle', 100) &&
+             isOptionalBoundedString(data, 'referenceImageBase64', 320000) &&
+             data.avatarPreset is string && data.avatarPreset.size() <= 64 &&
+             data.accentColorHex is string && data.accentColorHex.size() <= 16 &&
+             isOptionalBoundedString(data, 'voiceLanguage', 32) &&
+             isOptionalBoundedString(data, 'voiceId', 160) &&
+             (!('voicePitch' in data) || (data.voicePitch is number && data.voicePitch >= 0.5 && data.voicePitch <= 2.0)) &&
+             (!('voiceRate' in data) || (data.voiceRate is number && data.voiceRate >= 0.5 && data.voiceRate <= 2.0)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidCharacterReference(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'viewType', 'expression', 'poseAction',
+               'visualStyle', 'promptSummary', 'imageBase64', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'viewType', 'expression', 'poseAction',
+               'visualStyle', 'promptSummary', 'imageBase64', 'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.viewType is string && data.viewType.size() >= 1 && data.viewType.size() <= 64 &&
+             data.expression is string && data.expression.size() >= 1 && data.expression.size() <= 64 &&
+             data.poseAction is string && data.poseAction.size() >= 1 && data.poseAction.size() <= 80 &&
+             data.visualStyle is string && data.visualStyle.size() <= 100 &&
+             data.promptSummary is string && data.promptSummary.size() <= 1000 &&
+             data.imageBase64 is string && data.imageBase64.size() >= 16 && data.imageBase64.size() <= 320000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidStudioAsset(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'name', 'category', 'tags', 'notes',
+               'presetKey', 'localUri', 'durationLabel', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'name', 'category', 'tags', 'notes',
+               'presetKey', 'localUri', 'durationLabel', 'imageBase64',
+               'hasTransparency', 'visualStyle', 'promptUsed', 'graphicPayloadJson',
+               'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+             data.category in ['Background', 'Location', 'Character', 'Prop', 'Image', 'Audio', 'SFX', 'MotionGraphic'] &&
+             data.tags is string && data.tags.size() <= 200 &&
+             data.notes is string && data.notes.size() <= 1000 &&
+             data.presetKey is string && data.presetKey.size() <= 128 &&
+             data.localUri is string && data.localUri.size() <= 500 &&
+             data.durationLabel is string && data.durationLabel.size() <= 32 &&
+             isOptionalBoundedString(data, 'imageBase64', 320000) &&
+             (!('hasTransparency' in data) || data.hasTransparency is bool) &&
+             isOptionalBoundedString(data, 'visualStyle', 100) &&
+             isOptionalBoundedString(data, 'promptUsed', 1500) &&
+             isOptionalBoundedString(data, 'graphicPayloadJson', 32000) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidStudioAudioAsset(data, userId) {
+      return data.keys().hasAll([
+               'userId', 'name', 'category', 'sourceType', 'storageState',
+               'localFilePath', 'mimeType', 'fileSizeBytes', 'durationSec',
+               'language', 'voiceId', 'characterId', 'waveformPeaks', 'notes',
+               'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'name', 'category', 'sourceType', 'storageState',
+               'localFilePath', 'mimeType', 'fileSizeBytes', 'durationSec',
+               'language', 'voiceId', 'characterId', 'waveformPeaks', 'notes',
+               'createdAt', 'updatedAt'
+             ]) &&
+             data.userId is string && data.userId == userId &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+             data.category in ['Narration', 'Dialogue', 'Music', 'SFX', 'Ambient'] &&
+             data.sourceType in ['IMPORTED', 'ANDROID_TTS', 'GEMINI_TTS'] &&
+             data.storageState in ['LOCAL_PERSISTENT', 'MISSING_LOCAL'] &&
+             data.localFilePath is string && data.localFilePath.size() <= 400 &&
+             data.mimeType in [
+               'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav',
+               'audio/mp4', 'audio/m4a', 'audio/aac', 'audio/ogg',
+               'audio/webm', 'audio/flac'
+             ] &&
+             data.fileSizeBytes is int && data.fileSizeBytes >= 0 && data.fileSizeBytes <= 15728640 &&
+             data.durationSec is number && data.durationSec >= 0.0 && data.durationSec <= 1800.0 &&
+             data.language is string && data.language.size() <= 32 &&
+             data.voiceId is string && data.voiceId.size() <= 160 &&
+             data.characterId is string && data.characterId.size() <= 128 &&
+             data.waveformPeaks is list && data.waveformPeaks.size() <= 48 &&
+             data.notes is string && data.notes.size() <= 600 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // --- USER-SCOPED COLLECTIONS ---
+
+    match /users/{userId}/projects/{projectId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(projectId);
+      allow create: if isOwner(userId) &&
+                       isValidId(projectId) &&
+                       isValidStudioProject(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(projectId) &&
+                       isValidStudioProject(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'scriptText', 'scriptLanguage', 'aspectRatio',
+                         'fps', 'resolution', 'storyAnalysis', 'projectAudioClips',
+                         'updatedAt'
+                       ]);
+      allow delete: if isOwner(userId) && isValidId(projectId);
+
+      match /scenes/{sceneId} {
+        allow list: if isOwner(userId) && isValidId(projectId);
+        allow get: if isOwner(userId) && isValidId(projectId) && isValidId(sceneId);
+        allow create: if isOwner(userId) &&
+                         isValidId(projectId) &&
+                         isValidId(sceneId) &&
+                         isValidStudioScene(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(projectId) &&
+                         isValidId(sceneId) &&
+                         isValidStudioScene(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId) && isValidId(projectId) && isValidId(sceneId);
+      }
+    }
+
+    match /users/{userId}/characters/{characterId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(characterId);
+      allow create: if isOwner(userId) &&
+                       isValidId(characterId) &&
+                       isValidStudioCharacter(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(characterId) &&
+                       isValidStudioCharacter(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'charCode', 'name', 'role', 'visualAge',
+                         'faceDescription', 'hairStyle', 'hairColor', 'clothing',
+                         'clothingColors', 'bodyProportions', 'accessories',
+                         'personality', 'appearanceNotes', 'wardrobePalette',
+                         'expressionDefault', 'visualStyle', 'referenceImageBase64',
+                         'avatarPreset', 'accentColorHex', 'voiceLanguage',
+                         'voiceId', 'voicePitch', 'voiceRate', 'updatedAt'
+                       ]);
+      allow delete: if isOwner(userId) && isValidId(characterId);
+
+      match /references/{referenceId} {
+        allow list: if isOwner(userId) && isValidId(characterId);
+        allow get: if isOwner(userId) && isValidId(characterId) && isValidId(referenceId);
+        allow create: if isOwner(userId) &&
+                         isValidId(characterId) &&
+                         isValidId(referenceId) &&
+                         isValidCharacterReference(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(characterId) &&
+                         isValidId(referenceId) &&
+                         isValidCharacterReference(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'viewType', 'expression', 'poseAction',
+                           'visualStyle', 'promptSummary', 'imageBase64', 'updatedAt'
+                         ]);
+        allow delete: if isOwner(userId) && isValidId(characterId) && isValidId(referenceId);
+      }
+    }
+
+    match /users/{userId}/assets/{assetId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(assetId);
+      allow create: if isOwner(userId) &&
+                       isValidId(assetId) &&
+                       isValidStudioAsset(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(assetId) &&
+                       isValidStudioAsset(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'category', 'tags', 'notes', 'presetKey',
+                         'localUri', 'durationLabel', 'imageBase64',
+                         'hasTransparency', 'visualStyle', 'promptUsed',
+                         'graphicPayloadJson', 'updatedAt'
+                       ]);
+      allow delete: if isOwner(userId) && isValidId(assetId);
+    }
+
+    match /users/{userId}/audioAssets/{audioAssetId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(audioAssetId);
+      allow create: if isOwner(userId) &&
+                       isValidId(audioAssetId) &&
+                       isValidStudioAudioAsset(incoming(), userId);
+      allow update: if isOwner(userId) &&
+                       isValidId(audioAssetId) &&
+                       isValidStudioAudioAsset(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'category', 'sourceType', 'storageState',
+                         'localFilePath', 'mimeType', 'fileSizeBytes', 'durationSec',
+                         'language', 'voiceId', 'characterId', 'waveformPeaks',
+                         'notes', 'updatedAt'
+                       ]);
+      allow delete: if isOwner(userId) && isValidId(audioAssetId);
+    }
+  }
+}

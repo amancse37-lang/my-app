@@ -1,0 +1,275 @@
+{
+  "entities": {
+    "StudioProject": {
+      "title": "StudioProject",
+      "description": "A documentary animation project owned by a MotionStory Studio user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "scriptText": { "type": "string" },
+        "scriptLanguage": { "type": "string", "enum": ["English", "Hindi", "Bilingual"] },
+        "aspectRatio": { "type": "string", "enum": ["16:9", "21:9", "9:16"] },
+        "fps": { "type": "integer" },
+        "resolution": { "type": "string", "enum": ["720p", "1080p", "4K"] },
+        "storyAnalysis": { "type": "object", "description": "Optional Phase 5 AI story analysis summary and approval state." },
+        "projectAudioClips": { "type": "array", "description": "Optional bounded list (max 20) of project-level music/ambient audio clips." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "name", "scriptText", "scriptLanguage",
+        "aspectRatio", "fps", "resolution", "createdAt", "updatedAt"
+      ]
+    },
+    "StudioScene": {
+      "title": "StudioScene",
+      "description": "An individual 2D animated documentary scene with multi-character cast assignments.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "orderIndex": { "type": "integer" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "visualSummary": { "type": "string" },
+        "narrationText": { "type": "string" },
+        "subtitleText": { "type": "string" },
+        "durationSec": { "type": "number" },
+        "backgroundPreset": { "type": "string" },
+        "backgroundTintHex": { "type": "string" },
+        "characterId": { "type": "string" },
+        "characterCast": {
+          "type": "array",
+          "description": "Bounded list (max 12) of character placements with scene-specific expression, action, pose, layer, z-order, visibility, and transforms."
+        },
+        "sceneElements": {
+          "type": "array",
+          "description": "Bounded list (max 24) of visual scene elements (props, midground/foreground/background image layers) with transforms, z-order, and visibility."
+        },
+        "layerStates": {
+          "type": "array",
+          "description": "Bounded list (max 6) of scene compositing layer visibility, ordering, opacity, and depth metadata."
+        },
+        "animationKeyframes": {
+          "type": "array",
+          "description": "Bounded list (max 200) of deterministic time-based keyframes for character transforms, visual element transforms, and camera zoom/pan."
+        },
+        "characterActingCues": {
+          "type": "array",
+          "description": "Bounded list (max 60) of time-based character acting cues (expression, action, poseView, optional referenceSheetId) within a scene."
+        },
+        "cinematics": {
+          "type": "object",
+          "description": "Cinematic camera framing, 2D depth/parallax, lighting/color grading, atmosphere weather, and post-processing VFX settings for the scene."
+        },
+        "scenePlan": {
+          "type": "object",
+          "description": "Phase 5 AI scene planning metadata (location, environment, tone, visual/camera/lighting/audio suggestions, approval lock)."
+        },
+        "dialogueLines": {
+          "type": "array",
+          "description": "Bounded list (max 40) of multi-speaker dialogue lines linked to permanent character IDs and timing."
+        },
+        "audioClips": {
+          "type": "array",
+          "description": "Bounded list (max 40) of positioned multi-track scene audio clips (narration, dialogue, music, SFX, ambient) with trim/volume/fade/loop."
+        },
+        "lipSyncCues": {
+          "type": "array",
+          "description": "Bounded list (max 240) of deterministic viseme mouth-state cues synchronized with dialogue timing and audio envelopes."
+        },
+        "soundSuggestions": {
+          "type": "array",
+          "description": "Bounded list (max 20) of AI-suggested music, SFX, and ambient cues for the scene."
+        },
+        "motionGraphics": {
+          "type": "array",
+          "description": "Bounded list (max 30) of editable Phase 6 animated titles, lower thirds, infographics, and documentary map graphics."
+        },
+        "subtitleCues": {
+          "type": "array",
+          "description": "Bounded list (max 80) of structured timed subtitle cues for the scene."
+        },
+        "subtitleStyle": {
+          "type": "object",
+          "description": "Scene-level subtitle typography, color, outline, background, alignment, and vertical placement configuration."
+        },
+        "outgoingTransition": {
+          "type": "object",
+          "description": "Composited transition configuration from this scene into the next scene."
+        },
+        "graphicSuggestions": {
+          "type": "array",
+          "description": "Bounded list (max 20) of reviewable AI graphic and infographic suggestions for this scene."
+        },
+        "posX": { "type": "number" },
+        "posY": { "type": "number" },
+        "scale": { "type": "number" },
+        "rotationDeg": { "type": "number" },
+        "animationStyle": { "type": "string" },
+        "cameraMovement": { "type": "string" },
+        "cameraZoom": { "type": "number" },
+        "effectPreset": { "type": "string" },
+        "effectIntensity": { "type": "number" },
+        "motionGraphicTitle": { "type": "string" },
+        "motionGraphicStyle": { "type": "string" },
+        "musicCue": { "type": "string" },
+        "sfxCue": { "type": "string" },
+        "objectProp": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "orderIndex", "title", "description", "visualSummary",
+        "narrationText", "subtitleText", "durationSec", "backgroundPreset",
+        "backgroundTintHex", "characterId", "posX", "posY", "scale",
+        "rotationDeg", "animationStyle", "cameraMovement", "cameraZoom",
+        "effectPreset", "effectIntensity", "motionGraphicTitle",
+        "motionGraphicStyle", "musicCue", "sfxCue", "objectProp",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "StudioCharacter": {
+      "title": "StudioCharacter",
+      "description": "Full reusable 2D documentary character profile with visual identity consistency metadata and primary reference image.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "charCode": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "visualAge": { "type": "string" },
+        "faceDescription": { "type": "string" },
+        "hairStyle": { "type": "string" },
+        "hairColor": { "type": "string" },
+        "clothing": { "type": "string" },
+        "clothingColors": { "type": "string" },
+        "bodyProportions": { "type": "string" },
+        "accessories": { "type": "string" },
+        "personality": { "type": "string" },
+        "appearanceNotes": { "type": "string" },
+        "wardrobePalette": { "type": "string" },
+        "expressionDefault": { "type": "string" },
+        "visualStyle": { "type": "string" },
+        "referenceImageBase64": { "type": "string" },
+        "avatarPreset": { "type": "string" },
+        "accentColorHex": { "type": "string" },
+        "voiceLanguage": { "type": "string", "description": "Preferred speech synthesis language for this character." },
+        "voiceId": { "type": "string", "description": "Preferred on-device TTS voice identifier for this character." },
+        "voicePitch": { "type": "number", "description": "Preferred speech pitch multiplier (0.5 to 2.0)." },
+        "voiceRate": { "type": "number", "description": "Preferred speech rate multiplier (0.5 to 2.0)." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "charCode", "name", "role", "appearanceNotes",
+        "wardrobePalette", "expressionDefault", "avatarPreset",
+        "accentColorHex", "createdAt", "updatedAt"
+      ]
+    },
+    "CharacterReferenceSheet": {
+      "title": "CharacterReferenceSheet",
+      "description": "Generated 2D character turnaround view, expression, or pose reference image linked to a permanent character profile.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "viewType": { "type": "string" },
+        "expression": { "type": "string" },
+        "poseAction": { "type": "string" },
+        "visualStyle": { "type": "string" },
+        "promptSummary": { "type": "string" },
+        "imageBase64": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "viewType", "expression", "poseAction",
+        "visualStyle", "promptSummary", "imageBase64", "createdAt", "updatedAt"
+      ]
+    },
+    "StudioAsset": {
+      "title": "StudioAsset",
+      "description": "Organized documentary studio asset.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "category": {
+          "type": "string",
+          "enum": ["Background", "Location", "Character", "Prop", "Image", "Audio", "SFX", "MotionGraphic"]
+        },
+        "tags": { "type": "string" },
+        "notes": { "type": "string" },
+        "presetKey": { "type": "string" },
+        "localUri": { "type": "string" },
+        "durationLabel": { "type": "string" },
+        "imageBase64": { "type": "string", "description": "Optional compressed JPEG or transparent PNG Base64 payload (max 320,000 chars) for AI-generated backgrounds and props." },
+        "hasTransparency": { "type": "boolean", "description": "Verified pixel alpha transparency flag for generated or imported visual assets." },
+        "visualStyle": { "type": "string", "description": "Documentary 2D art style used to generate the visual asset." },
+        "promptUsed": { "type": "string", "description": "Prompt summary used when generating the visual asset." },
+        "graphicPayloadJson": { "type": "string", "description": "Optional serialized Phase 6 MotionGraphicElement template JSON (max 32,000 chars) for reusable motion graphic templates." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "name", "category", "tags", "notes",
+        "presetKey", "localUri", "durationLabel", "createdAt", "updatedAt"
+      ]
+    },
+    "StudioAudioAsset": {
+      "title": "StudioAudioAsset",
+      "description": "Persistent audio metadata entry (imported file or synthesized TTS WAV stored in app-private storage; no raw audio blobs in Firestore).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["Narration", "Dialogue", "Music", "SFX", "Ambient"] },
+        "sourceType": { "type": "string", "enum": ["IMPORTED", "ANDROID_TTS", "GEMINI_TTS"] },
+        "storageState": { "type": "string", "enum": ["LOCAL_PERSISTENT", "MISSING_LOCAL"] },
+        "localFilePath": { "type": "string" },
+        "mimeType": { "type": "string" },
+        "fileSizeBytes": { "type": "integer" },
+        "durationSec": { "type": "number" },
+        "language": { "type": "string" },
+        "voiceId": { "type": "string" },
+        "characterId": { "type": "string" },
+        "waveformPeaks": { "type": "array" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "name", "category", "sourceType", "storageState",
+        "localFilePath", "mimeType", "fileSizeBytes", "durationSec",
+        "language", "voiceId", "characterId", "waveformPeaks", "notes",
+        "createdAt", "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/StudioProject" },
+      "description": "User-owned documentary animation projects."
+    },
+    "/users/{userId}/projects/{projectId}/scenes/{sceneId}": {
+      "schema": { "$ref": "#/entities/StudioScene" },
+      "description": "Ordered 2D animated scenes belonging to a project."
+    },
+    "/users/{userId}/characters/{characterId}": {
+      "schema": { "$ref": "#/entities/StudioCharacter" },
+      "description": "Reusable character profiles with permanent IDs and consistency blueprints."
+    },
+    "/users/{userId}/characters/{characterId}/references/{referenceId}": {
+      "schema": { "$ref": "#/entities/CharacterReferenceSheet" },
+      "description": "Generated character turnaround views, expressions, and pose reference images."
+    },
+    "/users/{userId}/assets/{assetId}": {
+      "schema": { "$ref": "#/entities/StudioAsset" },
+      "description": "User asset library entries."
+    },
+    "/users/{userId}/audioAssets/{audioAssetId}": {
+      "schema": { "$ref": "#/entities/StudioAudioAsset" },
+      "description": "User audio asset metadata entries (narration, dialogue, music, SFX, ambient)."
+    }
+  }
+}
