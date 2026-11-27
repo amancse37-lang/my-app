@@ -1,4 +1,4 @@
-```yaml
+
 name: Android APK Build
 
 on:
@@ -51,4 +51,3 @@ jobs:
         with:
           name: MotionStory-Studio-APK
           path: app/build/outputs/apk/debug/*.apk
-```
